@@ -1,0 +1,10 @@
+#board {
+  background-color: #0000000;
+  border: 3px solid green;
+  display: inline;
+}
+
+#board-container {
+  width: 100%;
+  text-align: center;
+}
