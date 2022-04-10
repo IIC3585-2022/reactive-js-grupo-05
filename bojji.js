@@ -163,27 +163,20 @@ const getRandomMove = () => { // REFACTORIZAR ESTO SI ES QUE SE PUEDE
 
 const getPositionsWithoutCollision = (positions, collisionPosition) => {
     positions.forEach((positionToTest, index, object) => {
-            if (collision(positionToTest, collisionPosition)) {
-                object.splice(index, 1);
-            }
+        if (collision(positionToTest, collisionPosition)) {
+            object.splice(index, 1);
         }
-    );
+    });
     return positions;
 }
 
 const ticker$ = Rx.Observable
     .interval(SPEED, Rx.Scheduler.requestAnimationFrame)
-    .map(() => ({
-        time: Date.now(),
-        deltaTime: null
-    }))
-    .scan(
-        (previous, current) => ({
-            time: current.time,
-            deltaTime: (current.time - previous.time) / 1000
-        })
-    );
-
+    .map(() => ({ time: Date.now(), deltaTime: null }))
+    .scan((previous, current) => ({
+        time: current.time,
+        deltaTime: (current.time - previous.time) / 1000
+    }));
 
 const input$ = Rx.Observable.fromEvent(document, 'keydown').scan( (lastDir, event) => {
     let nextMove = lastDir;
@@ -265,61 +258,33 @@ const input$ = Rx.Observable.fromEvent(document, 'keydown').scan( (lastDir, even
 
 const p1$ = input$
     .scan( (pos, keypress) => {
-      if (keypress.player == 1) {
-        let nextX = Math.max(0, Math.min(pos.x + keypress.x, canvas.width - PLAYER_WIDTH));
-        let nextY = Math.max(0, Math.min(pos.y + keypress.y, canvas.height - PLAYER_HEIGHT));
-        return {
-            x: nextX,
-            y: nextY,
+        return keypress.player == 1 ? {
+            x: Math.max(0, Math.min(pos.x + keypress.x, canvas.width - PLAYER_WIDTH)),
+            y: Math.max(0, Math.min(pos.y + keypress.y, canvas.height - PLAYER_HEIGHT)),
+            direction: keypress.direction,
+            player: keypress.player
+        } : {
+            x: pos.x,
+            y: pos.y,
             direction: keypress.direction,
             player: keypress.player
         }
-      } else {
-        let nextX = pos.x;
-        let nextY = pos.y;
-        return {
-            x: nextX,
-            y: nextY,
-            direction: keypress.direction,
-            player: keypress.player
-        }
-      }
-        
-    }, {
-        x: 10,
-        y: 10,
-        direction: 'right',
-        player: 1
-    });
-  
+    }, { x: 10, y: 10, direction: 'right', player: 1 });
+
 const p2$ = input$
     .scan( (pos, keypress) => {
-
-    if (keypress.player == 2) {
-        let nextX = Math.max(0, Math.min(pos.x + keypress.x, canvas.width - PLAYER_WIDTH));
-        let nextY = Math.max(0, Math.min(pos.y + keypress.y, canvas.height - PLAYER_HEIGHT));
-        return {
-            x: nextX,
-            y: nextY,
+        return keypress.player == 2 ? {
+            x: Math.max(0, Math.min(pos.x + keypress.x, canvas.width - PLAYER_WIDTH)),
+            y: Math.max(0, Math.min(pos.y + keypress.y, canvas.height - PLAYER_HEIGHT)),
+            direction: keypress.direction,
+            player: keypress.player
+        } : {
+            x: Math.max(0, pos.x),
+            y: Math.max(0, pos.y),
             direction: keypress.direction,
             player: keypress.player
         }
-    } else {
-        let nextX = Math.max(0, pos.x);
-        let nextY = Math.max(0, pos.y);
-        return {
-            x: nextX,
-            y: nextY,
-            direction: keypress.direction,
-            player: keypress.player
-        };
-      }
-    }, {
-      x: 10,
-      y: 10,
-      direction: 'right',
-      player: 2
-  });
+    }, { x: 10, y: 10, direction: 'right', player: 2 });
 
 const crowns$ = p1$.scan( (crowns, p1Pos) => {
     return getPositionsWithoutCollision(crowns, p1Pos);
@@ -361,11 +326,7 @@ const enemies$ = ticker$.withLatestFrom(p1$, p2$, swordsTaken$, swordsEnd$)
                     }
                     direction = getMoveTowards(p1Pos, enemyPos); // Move pacman needs to do to run towards enemy is the same as enemy running away from pacman
                 } else {
-                    if (Math.random() > ENEMY_PROBABILITY_RANDOM) {
-                        direction = getMoveTowards(enemyPos, p1Pos);
-                    } else {
-                        direction = getRandomMove();
-                    }
+                    direction = Math.random() > ENEMY_PROBABILITY_RANDOM ? getMoveTowards(enemyPos, p1Pos) : getRandomMove();
                 }
                 switch (direction) {
                     case 'up':
@@ -385,28 +346,19 @@ const enemies$ = ticker$.withLatestFrom(p1$, p2$, swordsTaken$, swordsEnd$)
                         yPos = enemyPos.y;
                         break;
                 }
-                newPositions.push({
-                    x: xPos,
-                    y: yPos,
-                    direction: direction,
-                    scared: scared
-                });
+                newPositions.push({ x: xPos, y: yPos, direction: direction, scared: scared });
             }
         );
         return newPositions;
     }, createInitialRandomPositions(NUM_ENEMIES));
 
-const length$ = crowns$.scan( (prevLength, apple) => {
-    return prevLength + 1;
-}, -1);
+const length$ = crowns$.scan( prevLength => { return prevLength + 1; }, -1);
 
 const score$ = length$.withLatestFrom(swordsTaken$).map( ([length, numSwords]) => {
     return Math.max(0, length * 10 + 100 * numSwords.value);
 });
 
-const renderError = (error) => {
-    alert("error: " + error);
-}
+const renderError = (error) => { alert("error: " + error); }
 
 const game$ = Rx.Observable.combineLatest(
         p1$, p2$, crowns$, score$, enemies$, swords$,
