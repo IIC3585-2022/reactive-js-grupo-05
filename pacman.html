@@ -1,21 +1,28 @@
 <!DOCTYPE html>
-<head>
-  <meta charset="utf-8">
-  <link rel="stylesheet" href="style.css">
-  <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/rxjs/4.1.0/rx.all.js'></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/6.5.2/rxjs.umd.js"></script>
-</head>
-
-<body>
-  <div id="board-container">
-    <canvas id="board" width="1200" height="900" />
-  </div>
-  <div id="images" style="display: none;">
-      <img src="/Sprites/pj1.png" id="pj1"/>
-      <img src="/Sprites/pj2.png" id="pj2"/>
-  </div>
-  <script type="module" src="./pacman.js"></script>
-</body>
-
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Pacman Reactive!</title>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/rxjs/4.1.0/rx.all.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/rxjs-dom/7.0.3/rx.dom.js'></script>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+	overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+<div id="usedImages" style="display:none">
+	<img src="Sprites/pj1.png" id="player1" />
+  <img src="Sprites/pj2.png" id="player2">
+	<img src="Sprites/snake.png" id="enemy" />
+	<img src="cookie.png" id="cookie" />
+	<img src="bonus.png" id="bonus" />
+	<img src="ghost-scared.png" id="enemy-scared" />
+</div>
+    <script src="pacman.js"></script>
+  </body>
 </html>
+
