@@ -1,15 +1,14 @@
 const board = document.getElementById("board");
 const ctx = board.getContext("2d");
 const PLAYER_HEIGHT = 105;
-const PLAYER_WIDTH = 75;
+const PLAYER_WIDTH = 65;
 const VELOCITY = PLAYER_HEIGHT/3;
 const NUM_CROWNS = 10;
 const NUM_SWORDS = 5;
 const NUM_ENEMIES = 4;
-const ENEMY_SPEED = 0.00025;
+const ENEMY_SPEED = 0.025;
 const ENEMY_PROBABILITY_RANDOM = 0.2;
-const SCARE_TIME = 5000; // in miliseconds
-const DEBUG = 0;
+const SCARE_TIME = 5000; 
 
 const KEYMAP_PJ1 = {
   left: 37,
@@ -25,38 +24,32 @@ const KEYMAP_PJ2 = {
   down: 83,
 };
 
-const PREV_DIR = {
-  'left': {x: VELOCITY, y: 0},
-  'right': {x: -VELOCITY, y: 0},
-  'up': {x: 0, y: VELOCITY},
-  'down': {x: 0, y: -VELOCITY},
-  0: {x: 0, y: 0}
-};
-
-const fillBoard = () => {  
-    var img = document.getElementById("grass");
-    var pat = ctx.createPattern(img, "repeat");
-    ctx.rect(0, 0, 3840, 2160);
-    ctx.fillStyle = pat;
-    ctx.fill(); 
-};
-
-// const pipe = (...functions) => (value) => {
-//   return functions.reduce((currentValue, currentFunction) => {
-//     return currentFunction(currentValue);
-//   }, value);
+// const PREV_DIR = {
+//   'left': {x: VELOCITY, y: 0},
+//   'right': {x: -VELOCITY, y: 0},
+//   'up': {x: 0, y: VELOCITY},
+//   'down': {x: 0, y: -VELOCITY},
+//   0: {x: 0, y: 0}
 // };
 
-const getRandomPos = (min, max) => { // Retorna un random INT
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+const fillBoard = () => {  
+  var img = document.getElementById("grass");
+  var pat = ctx.createPattern(img, "repeat");
+  ctx.rect(0, 0, 3840, 2160);
+  ctx.fillStyle = pat;
+  ctx.fill(); 
 };
 
-const getRandomPosition = () => {
+const getRandomPos = (min, max) => { // Retorna un random int
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+const getRandomCoord = () => {
   return {
-      x: getRandomPos(0, board.width - PLAYER_WIDTH),
-      y: getRandomPos(0, board.height - PLAYER_HEIGHT)
+    x: getRandomPos(0, board.width - PLAYER_WIDTH),
+    y: getRandomPos(0, board.height - PLAYER_HEIGHT)
   };
 }
 
@@ -79,11 +72,8 @@ const addSwords = swords => {
 
 const addEnemies = enemies => { 
   enemies.forEach( enemy => {
-      let img;
-      enemy.scared
-          ? img = document.getElementById("enemy-scared")
-          : img = document.getElementById("enemy");  
-      ctx.drawImage(img, enemy.x, enemy.y, 50, 50);     
+      let img = document.getElementById("enemy");  
+      ctx.drawImage(img, enemy.x, enemy.y, 70, 70);     
   });
 }
 
@@ -94,8 +84,7 @@ const addScore = score => {
   ctx.strokeText('Score: ' + score, 40, 43);
 }
 
-const renderScene = function (actors) {
-  console.log("trender scene")
+const renderScene = actors => {
   fillBoard();
   addEnemies(actors.enemies);
   addPlayers(actors.input, actors.inputPJ2);
@@ -118,16 +107,14 @@ const collision = (target1, target2) => {
       (target1.y > target2.y - PLAYER_HEIGHT && target1.y < target2.y + PLAYER_HEIGHT);
 }
 
-const createInitialRandomPositions = num => { // PASAR A ABUILD
+const createInitialRandomPositions = num => {
   let pos = [];
   for (let i = 1; i <= num; i++) {
-      let newPos = getRandomPosition();
-      while (pos.some( oldPos => {
-              return collision(newPos, oldPos);
-          })) {
-          newPos = getRandomPosition();
-      }
-      pos.push(newPos);
+    let newPos = getRandomCoord();
+    while (pos.some( oldPos => {
+      return collision(newPos, oldPos);
+    })) { newPos = getRandomCoord(); }
+    pos.push(newPos);
   }
   return pos;
 }
@@ -141,7 +128,7 @@ const createSumFromPositions = positions => {
 const getMoveTowards = (from, to) => {
   let xDiff = from.x - to.x;
   let yDiff = from.y - to.y;
-  let direction = '';
+  let direction;
   Math.abs(xDiff) > Math.abs(yDiff) 
       ? xDiff > 0 ? direction = 'left' : direction = 'right'
       : yDiff > 0 ? direction = 'up' : direction = 'down'
@@ -152,33 +139,31 @@ const getRandomMove = () => { // REFACTORIZAR ESTO SI ES QUE SE PUEDE
   let moveType = getRandomPos(0, 3);
   let direction = '';
   switch (moveType) {
-      case 0:
-          direction = 'up';
-          break;
-      case 1:
-          direction = 'down';
-          break;
-      case 2:
-          direction = 'left';
-          break;
-      case 3:
-          direction = 'right';
-          break;
+    case 0:
+      direction = 'up';
+      break;
+    case 1:
+      direction = 'down';
+      break;
+    case 2:
+      direction = 'left';
+      break;
+    case 3:
+      direction = 'right';
+      break;
   }
   return direction;
 }
 
-const input$ = Rx.Observable.fromEvent(document, 'keydown').scan((lastMove, newMove) => {
-  const nextMove = getMovement(lastMove, newMove.keyCode);
+const inputPJ1$ = Rx.Observable.fromEvent(document, 'keydown').scan((lastMove, newMove) => {
+  const nextMove = getMovement(newMove.keyCode);
   return legalMove(lastMove, nextMove);
 }, { x: getRandomPos(0, board.width - PLAYER_WIDTH), y: getRandomPos(0, board.height - PLAYER_HEIGHT), dir: 0, pj:1})
-  // .subscribe(newPos => movePJ(newPos));
 
 const inputPJ2$ = Rx.Observable.fromEvent(document, 'keydown').scan((lastMove, newMove) => {
-  const nextMove = getMovement(lastMove, newMove.keyCode);
+  const nextMove = getMovement(newMove.keyCode);
   return legalMove(lastMove, nextMove);
 }, { x: getRandomPos(0, board.width - PLAYER_WIDTH), y: getRandomPos(0, board.height - PLAYER_HEIGHT), dir: 0, pj:2})
-  // .subscribe(newPos => movePJ(newPos));
 
 const ticker$ = Rx.Observable
   .interval(VELOCITY, Rx.Scheduler.requestAnimationFrame)
@@ -188,7 +173,7 @@ const ticker$ = Rx.Observable
       deltaTime: (current.time - previous.time) / 1000
   }));
 
-const crowns$ = input$.scan( (crowns, p1Pos) => {
+const crowns$ = inputPJ1$.scan( (crowns, p1Pos) => {
     return getPositionsWithoutCollision(crowns, p1Pos);
 }, createInitialRandomPositions(NUM_CROWNS)).distinctUntilChanged(createSumFromPositions);
 
@@ -196,7 +181,7 @@ const swords$ = inputPJ2$.scan( (swords, p2Pos) => {
   return getPositionsWithoutCollision(swords, p2Pos);
 }, createInitialRandomPositions(NUM_SWORDS)).distinctUntilChanged(createSumFromPositions);
 
-const swordsTaken$ = swords$.scan( (prevNumber, swords) => {
+const swordsTaken$ = swords$.scan( prevNumber => {
   return prevNumber + 1;
 }, -1).timestamp();
 
@@ -210,28 +195,13 @@ const score$ = length$.withLatestFrom(swordsTaken$).map( ([length, numSwords]) =
   return Math.max(0, length * 10 + 100 * numSwords.value);
 });
 
-const enemies$ = ticker$.withLatestFrom(input$, inputPJ2$, swordsTaken$, swordsEnd$)
-  .scan( (enemyPositions, [ticker, p1Pos, p2Pos, swordsTaken, swordsEnd]) => {
+const enemies$ = ticker$.withLatestFrom(inputPJ1$, inputPJ2$, swordsTaken$, swordsEnd$)
+  .scan( (enemyPositions, [ticker, p1Pos]) => {
       let enemySpeed = ENEMY_SPEED;
-      let scared = false;
-      if (swordsTaken.value > 0 && swordsTaken.timestamp > swordsEnd.timestamp) {
-          scared = true;
-          enemySpeed = 0.5 * enemySpeed;
-      }
       let newPositions = [];
       enemyPositions.forEach(
           (enemyPos) => {
-              let direction = '';
-              if (scared) {
-                  if (collision(enemyPos, p1Pos) || collision(enemyPos, p2Pos)) {
-                      // Put scared ghost touching p1 far away
-                      enemyPos.x = p1Pos.x + 200;
-                      enemyPos.y = p1Pos.y + 200;
-                  }
-                  direction = getMoveTowards(p1Pos, enemyPos); // Move pacman needs to do to run towards enemy is the same as enemy running away from pacman
-              } else {
-                  direction = Math.random() > ENEMY_PROBABILITY_RANDOM ? getMoveTowards(enemyPos, p1Pos) : getRandomMove();
-              }
+              let direction = Math.random() > ENEMY_PROBABILITY_RANDOM ? getMoveTowards(enemyPos, p1Pos) : getRandomMove();
               let xPos, yPos;
               switch (direction) {
                   case 'up':
@@ -251,7 +221,7 @@ const enemies$ = ticker$.withLatestFrom(input$, inputPJ2$, swordsTaken$, swordsE
                       yPos = enemyPos.y;
                       break;
               }
-              newPositions.push({ x: xPos, y: yPos, direction: direction, scared: scared });
+              newPositions.push({ x: xPos, y: yPos, direction: direction });
           }
       );
       return newPositions;
@@ -262,9 +232,9 @@ const movePJ = (newPos) => {
   const pj = document.getElementById("pj" + newPos.pj);
   ctx.fillRect(newPos.x + PREV_DIR[newPos.dir].x , newPos.y + PREV_DIR[newPos.dir].y, PLAYER_WIDTH, PLAYER_HEIGHT);
   ctx.drawImage(pj, newPos.x, newPos.y);
-};
+};movePJ
 
-const getMovement = (lastMove, keyCode) => {
+const getMovement = keyCode => {
   let pj = 0;
   if (Object.values(KEYMAP_PJ1).includes(keyCode)) {pj = 1;}
   else if (Object.values(KEYMAP_PJ2).includes(keyCode)) {pj = 2;}
@@ -308,16 +278,13 @@ const getPositionsWithoutCollision = (positions, collisionPosition) => {
 }
 
 const gameOver = (p1, p2,  enemies) => {
-  console.log("EN GAME OVER")
   return enemies.some( enemy =>   {
-      return enemy.scared ? false : (collision(p1, enemy) || collision(p2, enemy)) ? true : false 
+      return (collision(p1, enemy) || collision(p2, enemy)) ? true : false 
   });
 }
 
-
-
 const game$ = Rx.Observable.combineLatest(
-  input$, inputPJ2$, enemies$, crowns$, score$, swords$,
+  inputPJ1$, inputPJ2$, enemies$, crowns$, score$, swords$,
   (input, inputPJ2, enemies, crowns, score, swords) => {
     return {
         input: input,
@@ -329,7 +296,6 @@ const game$ = Rx.Observable.combineLatest(
     };
   })
 .sample(VELOCITY);
-
 
 
 game$.takeWhile((actors) => {
