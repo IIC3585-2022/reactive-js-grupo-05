@@ -3,9 +3,9 @@ const ctx = board.getContext("2d");
 const PLAYER_HEIGHT = 105;
 const PLAYER_WIDTH = 65;
 const VELOCITY = PLAYER_HEIGHT/3;
-const NUM_CROWNS = 10;
-const NUM_SWORDS = 5;
-const NUM_ENEMIES = 4;
+const NUM_CROWNS = 1;
+const NUM_SWORDS = 1;
+const NUM_ENEMIES = 2;
 const ENEMY_SPEED = 0.025;
 const ENEMY_PROBABILITY_RANDOM = 0.2;
 const SCARE_TIME = 5000; 
@@ -87,7 +87,7 @@ const addScore = score => {
 const renderScene = actors => {
   fillBoard();
   addEnemies(actors.enemies);
-  addPlayers(actors.input, actors.inputPJ2);
+  addPlayers(actors.inputPJ1, actors.inputPJ2);
   addCrowns(actors.crowns);
   addSwords(actors.swords);
   addScore(actors.score);
@@ -158,15 +158,15 @@ const getRandomMove = () => { // REFACTORIZAR ESTO SI ES QUE SE PUEDE
 const inputPJ1$ = Rx.Observable.fromEvent(document, 'keydown').scan((lastMove, newMove) => {
   const nextMove = getMovement(newMove.keyCode);
   return legalMove(lastMove, nextMove);
-}, { x: getRandomPos(0, board.width - PLAYER_WIDTH), y: getRandomPos(0, board.height - PLAYER_HEIGHT), dir: 0, pj:1})
+}, { x: getRandomPos(0, board.width - PLAYER_WIDTH), y: getRandomPos(0, board.height - PLAYER_HEIGHT), dir: 0, pj:1}).sample(120);
 
 const inputPJ2$ = Rx.Observable.fromEvent(document, 'keydown').scan((lastMove, newMove) => {
   const nextMove = getMovement(newMove.keyCode);
   return legalMove(lastMove, nextMove);
-}, { x: getRandomPos(0, board.width - PLAYER_WIDTH), y: getRandomPos(0, board.height - PLAYER_HEIGHT), dir: 0, pj:2})
+}, { x: getRandomPos(0, board.width - PLAYER_WIDTH), y: getRandomPos(0, board.height - PLAYER_HEIGHT), dir: 0, pj:2}).sample(120);
 
 const ticker$ = Rx.Observable
-  .interval(VELOCITY, Rx.Scheduler.requestAnimationFrame)
+  .interval(120, Rx.Scheduler.requestAnimationFrame)
   .map(() => ({ time: Date.now(), deltaTime: null }))
   .scan((previous, current) => ({
       time: current.time,
@@ -264,7 +264,6 @@ const legalMove = (lastMove, nextMove) => {
   } else if (lastMove.y + nextMove.y < 0){
     return {x: lastMove.x, y: board.height - PLAYER_HEIGHT, dir, pj};
   }
-
   return {x: lastMove.x + nextMove.x, y: lastMove.y + nextMove.y, dir, pj};
 };
 
@@ -285,9 +284,9 @@ const gameOver = (p1, p2,  enemies) => {
 
 const game$ = Rx.Observable.combineLatest(
   inputPJ1$, inputPJ2$, enemies$, crowns$, score$, swords$,
-  (input, inputPJ2, enemies, crowns, score, swords) => {
+  (inputPJ1, inputPJ2, enemies, crowns, score, swords) => {
     return {
-        input: input,
+        inputPJ1: inputPJ1,
         inputPJ2: inputPJ2,
         enemies: enemies,
         crowns: crowns, 
@@ -299,5 +298,5 @@ const game$ = Rx.Observable.combineLatest(
 
 
 game$.takeWhile((actors) => {
-  return gameOver(actors.input, actors.inputPJ2, actors.enemies) === false;
+  return gameOver(actors.inputPJ1, actors.inputPJ2, actors.enemies) === false;
 }).subscribe(renderScene, renderError, renderGameOver);
