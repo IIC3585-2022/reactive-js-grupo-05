@@ -47,10 +47,10 @@ const enemies = [  {'x': getRandomPos(0, board.width), 'y': getRandomPos(0, boar
 ];
 
 const crowns = [
-  {x: getRandomPos(0, board.width), y: getRandomPos(0, board.height)},
-  {x: getRandomPos(0, board.width), y: getRandomPos(0, board.height)},
-  {x: getRandomPos(0, board.width), y: getRandomPos(0, board.height)},
-  {x: getRandomPos(0, board.width), y: getRandomPos(0, board.height)},
+  {x: getRandomPos(0, board.width - CROWN_SIZE), y: getRandomPos(0, board.height - CROWN_SIZE)},
+  {x: getRandomPos(0, board.width - CROWN_SIZE), y: getRandomPos(0, board.height - CROWN_SIZE)},
+  {x: getRandomPos(0, board.width - CROWN_SIZE), y: getRandomPos(0, board.height - CROWN_SIZE)},
+  {x: getRandomPos(0, board.width - CROWN_SIZE), y: getRandomPos(0, board.height - CROWN_SIZE)},
 ];
 
 const fillBoard = () => {  
